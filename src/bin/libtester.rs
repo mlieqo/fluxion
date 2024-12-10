@@ -1,22 +1,31 @@
+use std::sync::Arc;
 
-use fluxion::kafka::consumer::KafkaConsumer;
-use tracing_subscriber;
-
+use fluxion::pipeline::Pipeline;
+use fluxion::{
+    kafka::{consumer::KafkaConsumer, producer::KafkaProducer},
+    pipeline::runner::run_pipeline,
+};
 
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
-    let consumer = KafkaConsumer::new("localhost", 9092, "test-topic", "example-consumer-group", "latest").expect("bitch cannot do that");
-    // let (tx, _rx) = tokio::sync::mpsc::channel::<Message<String>>(100);
-  
-    // let mut pipeline = Pipeline::new(consumer);
+    let consumer = KafkaConsumer::new(
+        "localhost",
+        9092,
+        "input-test-topic",
+        "example-consumer-group",
+        "latest",
+    )
+    .expect("Error creating consumer");
+    let producer = KafkaProducer::new("localhost", 9092, "output-test-topic")
+        .expect("Error creating producer");
 
-    // // Add a filter operator to retain only messages containing "Kafka".
-    // pipeline.add_operator(Filter::new(|data: &String| data.contains("Kafka")));
-
-    // // Add a map operator to append " Processed" to each message.
-    // pipeline.add_operator(Map::new(|data: &String| format!("{} Processed", data)));
-
-    // // Process a message through the pipeline.
-    // pipeline.run().await
+    let mut pipeline = Pipeline::<String>::new();
+    pipeline.add_operator(fluxion::operators::Filter::new(|data: &String| {
+        data.contains("Kafka")
+    }));
+    pipeline.add_operator(fluxion::operators::Map::new(|data: &String| {
+        format!("{} Processed", data)
+    }));
+    let _ = run_pipeline(Arc::new(consumer), Arc::new(producer), pipeline, 100).await;
 }

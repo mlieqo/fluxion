@@ -1,9 +1,10 @@
 use std::marker::PhantomData;
-use crate::message::{FromBytes, Message};
+
+use crate::message::{FromBytes, Message, ToBytes};
 
 pub trait Operator<T>: Send + Sync
 where
-    T: Send + FromBytes,
+    T: Send + FromBytes + ToBytes<T>,
 {
     fn process(&self, message: Message<T>) -> Option<Message<T>>;
 }
@@ -34,7 +35,7 @@ where
 impl<F, T> Operator<T> for Filter<F, T>
 where
     F: Fn(&T) -> bool + Send + Sync,
-    T: Send + Sync + FromBytes,
+    T: Send + Sync + FromBytes + ToBytes<T>,
 {
     fn process(&self, message: Message<T>) -> Option<Message<T>> {
         if (self.predicate)(message.get_data()) {
@@ -71,10 +72,9 @@ where
 impl<F, T> Operator<T> for Map<F, T>
 where
     F: Fn(&T) -> T + Send + Sync,
-    T: Send + Sync + FromBytes,
+    T: Send + Sync + FromBytes + ToBytes<T>,
 {
     fn process(&self, message: Message<T>) -> Option<Message<T>> {
-        // Call the mapper function with a reference to the data
         Some(Message::new((self.mapper)(message.get_data())))
     }
 }

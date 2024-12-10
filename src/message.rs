@@ -1,30 +1,28 @@
 use std::error::Error;
 
-
 pub mod base;
-
 
 pub trait FromBytes: Sized {
     fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn Error + Send + Sync>>;
 }
 
+pub trait ToBytes<T> {
+    fn to_bytes(message: &T) -> Vec<u8>;
+}
 
 pub struct Message<T>
 where
-    T: Send + FromBytes
+    T: Send + FromBytes + ToBytes<T>,
 {
-    data: T
+    data: T,
 }
 
-
-impl<T> Message<T> 
-where 
-    T: Send + FromBytes
+impl<T> Message<T>
+where
+    T: Send + FromBytes + ToBytes<T>,
 {
     pub fn new(data: T) -> Self {
-        Self {
-            data
-        }
+        Self { data }
     }
 
     pub fn get_data(&self) -> &T {
