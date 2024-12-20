@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::message::Message;
+use crate::operators::OperatorResult;
 use crate::{
     message::{FromBytes, ToBytes},
     operators::Operator,
@@ -40,14 +41,22 @@ where
         self.operators.push(Arc::new(operator));
     }
 
-    pub fn process(&self, message: Message<T>) -> Option<Message<T>> {
-        let mut msg = message;
+    pub async fn process(&self, message: Message<T>) -> Option<Vec<Message<T>>> {
+        let mut current_messages = vec![message];
+
         for op in &self.operators {
-            match op.process(msg) {
-                Some(m) => msg = m,
-                None => return None, // Message filtered out
+            let mut next_messages = Vec::new();
+
+            for msg in current_messages {
+
+                match op.process(msg) {
+                    OperatorResult::Single(m) => next_messages.push(m),
+                    OperatorResult::Multiple(m) => next_messages = m,
+                    OperatorResult::Empty => return None,
+                }
             }
+            current_messages = next_messages;
         }
-        Some(msg)
+        Some(current_messages)
     }
 }

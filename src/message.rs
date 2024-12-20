@@ -28,4 +28,8 @@ where
     pub fn get_data(&self) -> &T {
         &self.data
     }
+
+    pub fn get_data_mut(&mut self) -> &mut T {
+        &mut self.data
+    }
 }

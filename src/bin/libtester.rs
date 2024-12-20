@@ -1,10 +1,8 @@
 use std::sync::Arc;
 
 use fluxion::pipeline::Pipeline;
-use fluxion::{
-    kafka::{consumer::KafkaConsumer, producer::KafkaProducer},
-    pipeline::runner::run_pipeline,
-};
+use fluxion::pipeline::runner::run_pipeline;
+use fluxion::kafka::{consumer::KafkaConsumer, producer::KafkaProducer};
 
 #[tokio::main]
 async fn main() {
@@ -24,8 +22,11 @@ async fn main() {
     pipeline.add_operator(fluxion::operators::Filter::new(|data: &String| {
         data.contains("Kafka")
     }));
-    pipeline.add_operator(fluxion::operators::Map::new(|data: &String| {
+    pipeline.add_operator(fluxion::operators::Map::new(|data: &mut String| {
         format!("{} Processed", data)
+    }));
+    pipeline.add_operator(fluxion::operators::FlatMap::new(|data: &String| {
+        data.split(" ").map(str::to_string).collect()
     }));
     let _ = run_pipeline(Arc::new(consumer), Arc::new(producer), pipeline, 100).await;
 }
