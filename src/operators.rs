@@ -21,11 +21,7 @@ where
 }
 
 // Filter Operator
-pub struct Filter<F, T>
-where
-    F: Fn(&T) -> bool + Send + Sync,
-    T: Send,
-{
+pub struct Filter<F, T> {
     predicate: F,
     _marker: PhantomData<T>, // Marker to associate T with the struct
 }
@@ -46,7 +42,7 @@ where
 impl<F, T> Operator<T> for Filter<F, T>
 where
     F: Fn(&T) -> bool + Send + Sync,
-    T: Send + Sync + FromBytes + ToBytes<T> + 'static,
+    T: Send + Sync + FromBytes + ToBytes<T>,
 {
     fn process(&self, message: Message<T>) -> OperatorResult<T> {
         if (self.predicate)(message.get_data()) {
@@ -59,11 +55,7 @@ where
 }
 
 // Map Operator
-pub struct Map<F, T>
-where
-    F: Fn(&mut T) -> T + Send + Sync,
-    T: Send,
-{
+pub struct Map<F, T> {
     mapper: F,
     _marker: PhantomData<T>, // Marker to associate T with the struct
 }
@@ -84,7 +76,7 @@ where
 impl<F, T> Operator<T> for Map<F, T>
 where
     F: Fn(&mut T) -> T + Send + Sync,
-    T: Send + Sync + FromBytes + ToBytes<T> + 'static,
+    T: Send + Sync + FromBytes + ToBytes<T>,
 {
     fn process(&self, mut message: Message<T>) -> OperatorResult<T> {
         let result = (self.mapper)(message.get_data_mut());
@@ -94,11 +86,7 @@ where
 
 
 // FlatMap Operator
-pub struct FlatMap<F, T>
-where
-    F: Fn(&T) -> Vec<T> + Send + Sync,
-    T: Send,
-{
+pub struct FlatMap<F, T> {
     mapper: F,
     _marker: PhantomData<T>, // Marker to associate T with the struct
 }
